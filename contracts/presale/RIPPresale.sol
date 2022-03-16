@@ -5,6 +5,7 @@ import "../IERC20Mintable.sol";
 import "../IERC20Burnable.sol";
 import "../FullMath.sol";
 import "../SafeERC20.sol";
+import "../SafeMath.sol";
 import "../Ownable.sol";
 
 contract RIPPresale is Ownable {
@@ -12,75 +13,60 @@ contract RIPPresale is Ownable {
     using SafeERC20 for IERC20;
 
     address public aRIP;
-    address public DAI;
-    address public addressToSendDai;
+    address public addressToSendBNB;
 
-    uint256 public salePrice;
-    uint256 public totalWhiteListed;
+    uint256 public salePrice = uint256(1e18);
+    uint256 public totalParticipants;
     uint256 public endOfSale;
+    uint256 public totalPurchased;
 
     bool public saleStarted;
 
     mapping(address => bool) boughtRIP;
-    mapping(address => bool) whiteListed;
-
-    function whiteListBuyers(address[] memory _buyers)
-        external
-        onlyOwner()
-        returns (bool)
-    {
-        require(saleStarted == false, "Already initialized");
-
-        totalWhiteListed = totalWhiteListed.add(_buyers.length);
-
-        for (uint256 i; i < _buyers.length; i++) {
-            whiteListed[_buyers[i]] = true;
-        }
-
-        return true;
-    }
 
     function initialize(
-        address _addressToSendDai,
-        address _dai,
+        address _addressToSendBNB,
         address _aRIP,
-        uint256 _salePrice,
         uint256 _saleLength
     ) external onlyOwner() returns (bool) {
         require(saleStarted == false, "Already initialized");
 
         aRIP = _aRIP;
-        DAI = _dai;
-
-        salePrice = _salePrice;
 
         endOfSale = _saleLength.add(block.timestamp);
 
         saleStarted = true;
 
-        addressToSendDai = _addressToSendDai;
+        addressToSendBNB = _addressToSendBNB;
 
         return true;
     }
 
-    function getAllotmentPerBuyer() public view returns (uint256) {
-        return IERC20(aRIP).balanceOf(address(this)).div(totalWhiteListed);
+    function setEndOfSale(
+        uint256 _saleLength
+    ) external onlyOwner() returns (bool) {
+        endOfSale = _saleLength.add(block.timestamp);
     }
 
-    function purchaseaRIP(uint256 _amountDAI) external returns (bool) {
+    function getAllotmentPerBuyer() public view returns (uint256) {
+        return uint256(25).mul(1e18).div(salePrice.div(1e9));
+    }
+
+    function purchaseaRIP() public payable returns (bool) {
         require(saleStarted == true, "Not started");
-        require(whiteListed[msg.sender] == true, "Not whitelisted");
-        require(boughtRIP[msg.sender] == false, "Already participated");
-        require(block.timestamp < endOfSale, "Sale over");
+        require(block.timestamp < endOfSale, "Sale ended");
 
-        boughtRIP[msg.sender] = true;
+        uint256 _purchaseAmount = _calculateSaleQuote(msg.value);
+        uint256 _balanceaRIP = IERC20(aRIP).balanceOf(msg.sender);
 
-        uint256 _purchaseAmount = _calculateSaleQuote(_amountDAI);
+        require(_purchaseAmount.add(_balanceaRIP) <= getAllotmentPerBuyer(), "More than alloted");
+        if(!boughtRIP[msg.sender]) {
+            totalParticipants = totalParticipants.add(1);
+            boughtRIP[msg.sender] = true;
+        }
 
-        require(_purchaseAmount <= getAllotmentPerBuyer(), "More than alloted");
-        totalWhiteListed = totalWhiteListed.sub(1);
-
-        IERC20(DAI).safeTransferFrom(msg.sender, addressToSendDai, _amountDAI);
+        totalPurchased = totalPurchased.add(_purchaseAmount);
+        payable(addressToSendBNB).call{value: msg.value}("");
         IERC20(aRIP).safeTransfer(msg.sender, _purchaseAmount);
 
         return true;
@@ -107,7 +93,7 @@ contract RIPPresale is Ownable {
         view
         returns (uint256)
     {
-        return uint256(1e9).mul(paymentAmount_).div(salePrice);
+        return uint256(paymentAmount_).div(salePrice.div(1e9));
     }
 
     function calculateSaleQuote(uint256 paymentAmount_)

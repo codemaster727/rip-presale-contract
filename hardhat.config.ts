@@ -8,6 +8,9 @@ import "hardhat-gas-reporter";
 import "solidity-coverage";
 import "hardhat-tracer";
 import "hardhat-deploy";
+import {
+  RIPPresale__factory,
+} from "./typechain";
 
 dotenv.config();
 
@@ -42,6 +45,38 @@ task("deploy-presale", "", async (taskArgs, hre) => {
   });
   console.log("Presale deployed: ", deployed.address);
   console.log(`To verify: npx hardhat verify ${deployed.address}`);
+});
+
+task("init-presale", "", async (taskArgs, hre) => {
+  const accounts = await hre.ethers.getSigners();
+  const { deployments, getNamedAccounts } = hre;
+  const { deploy } = deployments;
+  const { deployer } = await getNamedAccounts();
+  const signer = await hre.ethers.provider.getSigner(deployer);
+
+  const args: any[] = [];
+  const presaleDeployment = await deployments.get("RIPPresale")
+  console.log("presaleaddress",accounts[0].address);
+  const presaleContract = RIPPresale__factory.connect(presaleDeployment.address, accounts[0])
+
+  await presaleContract.initialize("0x84047b81A97Ad3F0eA0Ae09A44Bf6F65c4D3D214", "0x4665FCD0fADbE594493A211D5e58FE48FD35BB1F", 100000)
+});
+
+task("test-presale", "", async (taskArgs, hre) => {
+  const accounts = await hre.ethers.getSigners();
+  const { deployments, getNamedAccounts } = hre;
+  const { deploy } = deployments;
+  const { deployer } = await getNamedAccounts();
+  // const signer = await hre.ethers.provider.getSigner(deployer);
+
+  const args: any[] = [];
+  const presaleDeployment = await deployments.get("RIPPresale")
+  const presaleContract = RIPPresale__factory.connect(presaleDeployment.address, accounts[0])
+  // const allot = await presaleContract.getAllotmentPerBuyer()
+  const allot = await presaleContract.calculateSaleQuote('10000000000000000000')
+  console.log("alloted", allot.toNumber());
+  // await presaleContract.purchaseaRIP({value: hre.ethers.utils.parseEther("0.01")})
+  // await presaleContract.sendRemainingaRIP("0xa9CE6c1696FA200Fcae87C5CE6D8A2Af4E6Bfe7e")
 });
 
 // You need to export an object to set up your config
@@ -95,6 +130,9 @@ const config: HardhatUserConfig = {
       accounts: {
         mnemonic: process.env.PRIVATE_KEY !== undefined ? process.env.PRIVATE_KEY : "",
       },
+    },
+    local: {
+      url: "http://127.0.0.1:7545",
     },
     bsc: {
       url: process.env.BSC_URL || "",
