@@ -59,7 +59,7 @@ task("init-presale", "", async (taskArgs, hre) => {
   console.log("presaleaddress",accounts[0].address);
   const presaleContract = RIPPresale__factory.connect(presaleDeployment.address, accounts[0])
 
-  await presaleContract.initialize("0x84047b81A97Ad3F0eA0Ae09A44Bf6F65c4D3D214", "0x4665FCD0fADbE594493A211D5e58FE48FD35BB1F", 100000)
+  await presaleContract.initialize("0x84047b81A97Ad3F0eA0Ae09A44Bf6F65c4D3D214", "0x4665FCD0fADbE594493A211D5e58FE48FD35BB1F", 250000)
 });
 
 task("test-presale", "", async (taskArgs, hre) => {
@@ -73,8 +73,9 @@ task("test-presale", "", async (taskArgs, hre) => {
   const presaleDeployment = await deployments.get("RIPPresale")
   const presaleContract = RIPPresale__factory.connect(presaleDeployment.address, accounts[0])
   // const allot = await presaleContract.getAllotmentPerBuyer()
-  const allot = await presaleContract.calculateSaleQuote('10000000000000000000')
-  console.log("alloted", allot.toNumber());
+  // const allot = await presaleContract.calculateSaleQuote('10000000000000000000')
+  // console.log("alloted", allot.toNumber());
+  await presaleContract.setEndOfSale(250000)
   // await presaleContract.purchaseaRIP({value: hre.ethers.utils.parseEther("0.01")})
   // await presaleContract.sendRemainingaRIP("0xa9CE6c1696FA200Fcae87C5CE6D8A2Af4E6Bfe7e")
 });
