@@ -42,6 +42,7 @@ task("deploy-presale", "", async (taskArgs, hre) => {
     from: accounts[0].address,
     args,
     log: true,
+    skipIfAlreadyDeployed: true,
   });
   console.log("Presale deployed: ", deployed.address);
   console.log(`To verify: npx hardhat verify ${deployed.address}`);
@@ -59,7 +60,7 @@ task("init-presale", "", async (taskArgs, hre) => {
   console.log("presaleaddress",accounts[0].address);
   const presaleContract = RIPPresale__factory.connect(presaleDeployment.address, accounts[0])
 
-  await presaleContract.initialize("0x84047b81A97Ad3F0eA0Ae09A44Bf6F65c4D3D214", "0x4665FCD0fADbE594493A211D5e58FE48FD35BB1F", 250000)
+  await presaleContract.initialize("0x54Ff8d4156BDe2c403a5429d5F42127d48031f3f", "0x484CEe75a3A29C7E1903d2229BB953d22a6e0785", Math.ceil((1647889200000-new Date().getTime())/1000))
 });
 
 task("test-presale", "", async (taskArgs, hre) => {
