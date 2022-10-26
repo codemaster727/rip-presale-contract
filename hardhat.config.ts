@@ -68,14 +68,10 @@ task("test-presale", "", async (taskArgs, hre) => {
   const { deployments, getNamedAccounts } = hre;
   const { deploy } = deployments;
   const { deployer } = await getNamedAccounts();
-  // const signer = await hre.ethers.provider.getSigner(deployer);
 
   const args: any[] = [];
   const presaleDeployment = await deployments.get("RIPPresale")
   const presaleContract = RIPPresale__factory.connect(presaleDeployment.address, accounts[0])
-  // const allot = await presaleContract.getAllotmentPerBuyer()
-  // const allot = await presaleContract.calculateSaleQuote('10000000000000000000')
-  // console.log("alloted", allot.toNumber());
   await presaleContract.setEndOfSale(250000)
   // await presaleContract.purchaseaRIP({value: hre.ethers.utils.parseEther("0.01")})
   // await presaleContract.sendRemainingaRIP("0xa9CE6c1696FA200Fcae87C5CE6D8A2Af4E6Bfe7e")
